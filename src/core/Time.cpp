@@ -8,9 +8,7 @@
 #include <stdexcept>
 #include <string>
 
-namespace {
-
-bool get_local_time(Time::seconds_type seconds, std::tm& result) {
+static bool get_local_time(Time::seconds_type seconds, std::tm& result) {
     const std::time_t value = static_cast<std::time_t>(seconds);
 
 #ifdef _WIN32
@@ -19,8 +17,6 @@ bool get_local_time(Time::seconds_type seconds, std::tm& result) {
     return localtime_r(&value, &result) != nullptr;
 #endif
 }
-
-} // namespace
 
 Time::clock_fn Time::clock_source_ = nullptr;
 
