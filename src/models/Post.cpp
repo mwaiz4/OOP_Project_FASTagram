@@ -9,6 +9,7 @@
 #include <ostream>
 #include <stdexcept>
 #include <vector>
+using namespace std;
 
 int Post::next_id_ = 1;
 
@@ -20,7 +21,7 @@ Post::Post()
       deleted_flag_(false),
       comments_() {}
 
-Post::Post(int author_id, const Time& created, const std::string& caption)
+Post::Post(int author_id, const Time& created, const string& caption)
     : id_(0),
       author_id_(author_id),
       created_(created),
@@ -28,7 +29,7 @@ Post::Post(int author_id, const Time& created, const std::string& caption)
       deleted_flag_(false),
       comments_() {
     if (author_id <= 0) {
-        throw std::invalid_argument("Author ID must be positive");
+        throw invalid_argument("Author ID must be positive");
     }
     id_ = generate_id();
 }
@@ -47,8 +48,8 @@ void Post::set_next_id(int value) {
 }
 
 int Post::generate_id() {
-    if (next_id_ <= 0 || next_id_ == (std::numeric_limits<int>::max)()) {
-        throw std::overflow_error("Post ID exhausted");
+    if (next_id_ <= 0 || next_id_ == (numeric_limits<int>::max)()) {
+        throw overflow_error("Post ID exhausted");
     }
     return next_id_++;
 }
@@ -65,7 +66,7 @@ const Time& Post::created() const {
     return created_;
 }
 
-const std::string& Post::caption() const {
+const string& Post::caption() const {
     return caption_;
 }
 
@@ -73,7 +74,7 @@ bool Post::is_deleted() const {
     return deleted_flag_;
 }
 
-void Post::set_caption(const std::string& value) {
+void Post::set_caption(const string& value) {
     caption_ = value;
 }
 
@@ -83,13 +84,13 @@ void Post::set_deleted(bool value) {
 
 void Post::add_comment(Comment* comment) {
     if (comment == nullptr) {
-        throw std::invalid_argument("Comment cannot be null");
+        throw invalid_argument("Comment cannot be null");
     }
     comments_.push_back(comment);
 }
 
 bool Post::remove_comment(int target) {
-    const auto found = std::find_if(
+    const auto found = find_if(
         comments_.begin(), comments_.end(),
         [target](const Comment* comment) { return comment->id() == target; });
 
@@ -119,108 +120,108 @@ Comment* Post::find_comment(int target) const {
     return nullptr;
 }
 
-const std::vector<Comment*>& Post::comments() const {
+const vector<Comment*>& Post::comments() const {
     return comments_;
 }
 
-void Post::write(std::ostream& out) const {
+void Post::write(ostream& out) const {
     if (id_ <= 0 || author_id_ <= 0) {
-        throw std::runtime_error("Post has invalid IDs");
+        throw runtime_error("Post has invalid IDs");
     }
     if (caption_.size() > 1000000) {
-        throw std::runtime_error("Caption is too large to save");
+        throw runtime_error("Caption is too large to save");
     }
     if (comments_.size() > 1000000) {
-        throw std::runtime_error("Too many comments to save");
+        throw runtime_error("Too many comments to save");
     }
 
-    const std::int32_t saved_id = static_cast<std::int32_t>(id_);
-    const std::int32_t saved_author_id = static_cast<std::int32_t>(author_id_);
+    const int32_t saved_id = static_cast<int32_t>(id_);
+    const int32_t saved_author_id = static_cast<int32_t>(author_id_);
     out.write(reinterpret_cast<const char*>(&saved_id), sizeof(saved_id));
     out.write(reinterpret_cast<const char*>(&saved_author_id), sizeof(saved_author_id));
     if (!out) {
-        throw std::runtime_error("Failed to write post IDs");
+        throw runtime_error("Failed to write post IDs");
     }
 
     created_.write(out);
-    const std::uint32_t length = static_cast<std::uint32_t>(caption_.size());
+    const uint32_t length = static_cast<uint32_t>(caption_.size());
     out.write(reinterpret_cast<const char*>(&length), sizeof(length));
-    out.write(caption_.data(), static_cast<std::streamsize>(caption_.size()));
+    out.write(caption_.data(), static_cast<streamsize>(caption_.size()));
 
-    const std::uint8_t deleted = deleted_flag_ ? 1 : 0;
+    const uint8_t deleted = deleted_flag_ ? 1 : 0;
     out.write(reinterpret_cast<const char*>(&deleted), sizeof(deleted));
     if (!out) {
-        throw std::runtime_error("Failed to write post fields");
+        throw runtime_error("Failed to write post fields");
     }
 
     write_likes(out);
-    const std::uint32_t comment_count = static_cast<std::uint32_t>(comments_.size());
+    const uint32_t comment_count = static_cast<uint32_t>(comments_.size());
     out.write(reinterpret_cast<const char*>(&comment_count), sizeof(comment_count));
     if (!out) {
-        throw std::runtime_error("Failed to write comment count");
+        throw runtime_error("Failed to write comment count");
     }
 
     for (const Comment* comment : comments_) {
         if (comment == nullptr) {
-            throw std::runtime_error("Post contains a null comment");
+            throw runtime_error("Post contains a null comment");
         }
         comment->write(out);
     }
 }
 
-void Post::read(std::istream& in) {
-    std::int32_t loaded_id = 0;
-    std::int32_t loaded_author_id = 0;
+void Post::read(istream& in) {
+    int32_t loaded_id = 0;
+    int32_t loaded_author_id = 0;
     in.read(reinterpret_cast<char*>(&loaded_id), sizeof(loaded_id));
     in.read(reinterpret_cast<char*>(&loaded_author_id), sizeof(loaded_author_id));
     if (!in) {
-        throw std::runtime_error("Failed to read post IDs");
+        throw runtime_error("Failed to read post IDs");
     }
     if (loaded_id <= 0 || loaded_author_id <= 0) {
-        throw std::runtime_error("File contains invalid post IDs");
+        throw runtime_error("File contains invalid post IDs");
     }
 
     Time loaded_created;
     loaded_created.read(in);
 
-    std::uint32_t caption_length = 0;
+    uint32_t caption_length = 0;
     in.read(reinterpret_cast<char*>(&caption_length), sizeof(caption_length));
     if (!in || caption_length > 1000000) {
-        throw std::runtime_error("File contains an invalid caption length");
+        throw runtime_error("File contains an invalid caption length");
     }
 
-    std::string loaded_caption(caption_length, '\0');
+    string loaded_caption(caption_length, '\0');
     if (caption_length > 0) {
-        in.read(&loaded_caption[0], static_cast<std::streamsize>(caption_length));
+        in.read(&loaded_caption[0], static_cast<streamsize>(caption_length));
     }
     if (!in) {
-        throw std::runtime_error("Failed to read post caption");
+        throw runtime_error("Failed to read post caption");
     }
 
-    std::uint8_t loaded_deleted = 0;
+    uint8_t loaded_deleted = 0;
     in.read(reinterpret_cast<char*>(&loaded_deleted), sizeof(loaded_deleted));
     if (!in || loaded_deleted > 1) {
-        throw std::runtime_error("File contains an invalid deleted flag");
+        throw runtime_error("File contains an invalid deleted flag");
     }
 
     read_likes(in);
 
-    std::uint32_t comment_count = 0;
+    uint32_t comment_count = 0;
     in.read(reinterpret_cast<char*>(&comment_count), sizeof(comment_count));
     if (!in || comment_count > 1000000) {
-        throw std::runtime_error("File contains an invalid comment count");
+        throw runtime_error("File contains an invalid comment count");
     }
 
-    std::vector<std::unique_ptr<Comment>> loaded_comments;
+    vector<unique_ptr<Comment>> loaded_comments;
     loaded_comments.reserve(comment_count);
-    for (std::uint32_t index = 0; index < comment_count; ++index) {
-        std::unique_ptr<Comment> comment(new Comment());
+    for (uint32_t index = 0; index < comment_count; ++index) {
+        unique_ptr<Comment> comment(new Comment());
         comment->read(in);
-        loaded_comments.push_back(std::move(comment));
+        loaded_comments.push_back(move(comment));
     }
 
-    if (loaded_id == (std::numeric_limits<int>::max)()) {
-        throw std::overflow_error("Post ID exhausted");
+    if (loaded_id == (numeric_limits<int>::max)()) {
+        throw overflow_error("Post ID exhausted");
     }
 
     // Reserve before deleting current comments, so allocation failure leaves
@@ -237,7 +238,7 @@ void Post::read(std::istream& in) {
     caption_.swap(loaded_caption);
     deleted_flag_ = loaded_deleted != 0;
 
-    for (std::unique_ptr<Comment>& comment : loaded_comments) {
+    for (unique_ptr<Comment>& comment : loaded_comments) {
         comments_.push_back(comment.get());
         comment.release();
     }

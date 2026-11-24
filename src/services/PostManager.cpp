@@ -11,8 +11,9 @@
 #include <stdexcept>
 #include <string>
 #include <vector>
+using namespace std;
 
-static void delete_posts(std::vector<Post*>& posts) {
+static void delete_posts(vector<Post*>& posts) {
     for (Post* post : posts) {
         delete post;
     }
@@ -26,34 +27,34 @@ static bool newest_first(const Post* lhs, const Post* rhs) {
     return rhs->id() < lhs->id();
 }
 
-static std::string normalize_tag(const std::string& tag) {
-    std::string result = tag;
+static string normalize_tag(const string& tag) {
+    string result = tag;
     if (!result.empty() && result[0] == '#') {
         result.erase(0, 1);
     }
 
     for (char& character : result) {
         character = static_cast<char>(
-            std::tolower(static_cast<unsigned char>(character)));
+            tolower(static_cast<unsigned char>(character)));
     }
     return result;
 }
 
-static bool caption_has_tag(const std::string& caption, const std::string& wanted_tag) {
+static bool caption_has_tag(const string& caption, const string& wanted_tag) {
     if (wanted_tag.empty()) {
         return false;
     }
 
-    for (std::size_t position = 0; position < caption.size(); ++position) {
+    for (size_t position = 0; position < caption.size(); ++position) {
         if (caption[position] != '#') {
             continue;
         }
 
-        std::size_t end = position + 1;
+        size_t end = position + 1;
         while (end < caption.size()) {
             const unsigned char character =
                 static_cast<unsigned char>(caption[end]);
-            if (!std::isalnum(character) && character != '_') {
+            if (!isalnum(character) && character != '_') {
                 break;
             }
             ++end;
@@ -63,7 +64,7 @@ static bool caption_has_tag(const std::string& caption, const std::string& wante
             continue;
         }
 
-        const std::string found_tag =
+        const string found_tag =
             normalize_tag(caption.substr(position, end - position));
         if (found_tag == wanted_tag) {
             return true;
@@ -83,10 +84,10 @@ PostManager::~PostManager() {
 
 void PostManager::add(Post* post) {
     if (post == nullptr) {
-        throw std::invalid_argument("Cannot add a null post");
+        throw invalid_argument("Cannot add a null post");
     }
     if (find(post->id()) != nullptr) {
-        throw std::invalid_argument("A post with this ID already exists");
+        throw invalid_argument("A post with this ID already exists");
     }
 
     posts_.push_back(post);
@@ -94,52 +95,52 @@ void PostManager::add(Post* post) {
 }
 
 Post* PostManager::find(int post_id) const {
-    const auto found = std::find_if(posts_.begin(), posts_.end(),
+    const auto found = find_if(posts_.begin(), posts_.end(),
         [post_id](const Post* post) { return post->id() == post_id; });
     return found == posts_.end() ? nullptr : *found;
 }
 
-std::vector<Post*> PostManager::posts_by(int author_id) const {
-    std::vector<Post*> result;
+vector<Post*> PostManager::posts_by(int author_id) const {
+    vector<Post*> result;
     for (Post* post : posts_) {
         if (!post->is_deleted() && post->author_id() == author_id) {
             result.push_back(post);
         }
     }
-    std::sort(result.begin(), result.end(), newest_first);
+    sort(result.begin(), result.end(), newest_first);
     return result;
 }
 
-std::vector<Post*> PostManager::feed_candidates() const {
-    std::vector<Post*> result;
+vector<Post*> PostManager::feed_candidates() const {
+    vector<Post*> result;
     for (Post* post : posts_) {
         if (!post->is_deleted()) {
             result.push_back(post);
         }
     }
-    std::sort(result.begin(), result.end(), newest_first);
+    sort(result.begin(), result.end(), newest_first);
     return result;
 }
 
-std::vector<Post*> PostManager::pinned_notices() const {
-    std::vector<Post*> result;
+vector<Post*> PostManager::pinned_notices() const {
+    vector<Post*> result;
     for (Post* post : posts_) {
         if (!post->is_deleted() && post->type() == PostType::Notice) {
             result.push_back(post);
         }
     }
-    std::sort(result.begin(), result.end(), newest_first);
+    sort(result.begin(), result.end(), newest_first);
     return result;
 }
 
-std::vector<Post*> PostManager::visible_posts(const Account* viewer) const {
+vector<Post*> PostManager::visible_posts(const Account* viewer) const {
     (void)viewer;
     return feed_candidates();
 }
 
-std::vector<Post*> PostManager::posts_by_tag(const std::string& tag) const {
-    const std::string wanted_tag = normalize_tag(tag);
-    std::vector<Post*> result;
+vector<Post*> PostManager::posts_by_tag(const string& tag) const {
+    const string wanted_tag = normalize_tag(tag);
+    vector<Post*> result;
     if (wanted_tag.empty()) {
         return result;
     }
@@ -149,12 +150,12 @@ std::vector<Post*> PostManager::posts_by_tag(const std::string& tag) const {
             result.push_back(post);
         }
     }
-    std::sort(result.begin(), result.end(), newest_first);
+    sort(result.begin(), result.end(), newest_first);
     return result;
 }
 
 bool PostManager::edit_caption(int post_id, int requester_id,
-                               const std::string& new_caption) {
+                               const string& new_caption) {
     Post* post = find(post_id);
     if (post == nullptr || post->is_deleted() ||
         post->author_id() != requester_id) {
@@ -167,7 +168,7 @@ bool PostManager::edit_caption(int post_id, int requester_id,
 }
 
 bool PostManager::remove(int post_id, int requester_id, bool is_admin) {
-    const auto found = std::find_if(posts_.begin(), posts_.end(),
+    const auto found = find_if(posts_.begin(), posts_.end(),
         [post_id](const Post* post) { return post->id() == post_id; });
     if (found == posts_.end()) {
         return false;
@@ -205,7 +206,7 @@ void PostManager::finalize_pending_deletes() {
 void PostManager::delete_by_user(int user_id) {
     bool removed_any = false;
     const auto remove_authored_posts = [user_id, &removed_any](
-        std::vector<Post*>& posts) {
+        vector<Post*>& posts) {
         auto current = posts.begin();
         while (current != posts.end()) {
             if ((*current)->author_id() == user_id) {
@@ -226,8 +227,8 @@ void PostManager::delete_by_user(int user_id) {
 }
 
 void PostManager::delete_post_cascade(int post_id) {
-    const auto remove_post = [post_id](std::vector<Post*>& posts) {
-        const auto found = std::find_if(posts.begin(), posts.end(),
+    const auto remove_post = [post_id](vector<Post*>& posts) {
+        const auto found = find_if(posts.begin(), posts.end(),
             [post_id](const Post* post) { return post->id() == post_id; });
         if (found == posts.end()) {
             return false;
@@ -255,7 +256,7 @@ bool PostManager::toggle_like(int post_id, int user_id) {
 
 bool PostManager::add_comment(int post_id, Comment* comment) {
     if (comment == nullptr) {
-        throw std::invalid_argument("Cannot add a null comment");
+        throw invalid_argument("Cannot add a null comment");
     }
 
     Post* post = find(post_id);
@@ -277,47 +278,47 @@ bool PostManager::is_changed() const {
     return changed_;
 }
 
-void PostManager::save(const std::string& filepath) {
+void PostManager::save(const string& filepath) {
     if (posts_.size() > 100000) {
-        throw std::runtime_error("Too many posts to save");
+        throw runtime_error("Too many posts to save");
     }
 
-    std::ofstream out(filepath, std::ios::binary | std::ios::trunc);
+    ofstream out(filepath, ios::binary | ios::trunc);
     if (!out.is_open()) {
-        throw std::runtime_error("Could not open post file for writing");
+        throw runtime_error("Could not open post file for writing");
     }
 
     const char magic[4] = {'F', 'S', 'T', 'P'};
-    const std::uint32_t version = 1;
-    const std::uint32_t post_count = static_cast<std::uint32_t>(posts_.size());
+    const uint32_t version = 1;
+    const uint32_t post_count = static_cast<uint32_t>(posts_.size());
     out.write(magic, sizeof(magic));
     out.write(reinterpret_cast<const char*>(&version), sizeof(version));
     out.write(reinterpret_cast<const char*>(&post_count), sizeof(post_count));
     if (!out) {
-        throw std::runtime_error("Failed to write post file header");
+        throw runtime_error("Failed to write post file header");
     }
 
     for (const Post* post : posts_) {
         if (post == nullptr) {
-            throw std::runtime_error("Post manager contains a null post");
+            throw runtime_error("Post manager contains a null post");
         }
-        const std::uint8_t type_tag = static_cast<std::uint8_t>(post->type());
+        const uint8_t type_tag = static_cast<uint8_t>(post->type());
         out.write(reinterpret_cast<const char*>(&type_tag), sizeof(type_tag));
         if (!out) {
-            throw std::runtime_error("Failed to write post type tag");
+            throw runtime_error("Failed to write post type tag");
         }
         post->write(out);
     }
 
     out.close();
     if (!out) {
-        throw std::runtime_error("Failed to finish writing post file");
+        throw runtime_error("Failed to finish writing post file");
     }
     changed_ = false;
 }
 
-void PostManager::load(const std::string& filepath) {
-    std::ifstream in(filepath, std::ios::binary);
+void PostManager::load(const string& filepath) {
+    ifstream in(filepath, ios::binary);
     if (!in.is_open()) {
         delete_posts(posts_);
         delete_posts(pending_deletes_);
@@ -326,19 +327,19 @@ void PostManager::load(const std::string& filepath) {
     }
 
     char magic[4]{};
-    std::uint32_t version = 0;
-    std::uint32_t post_count = 0;
+    uint32_t version = 0;
+    uint32_t post_count = 0;
     in.read(magic, sizeof(magic));
     in.read(reinterpret_cast<char*>(&version), sizeof(version));
     in.read(reinterpret_cast<char*>(&post_count), sizeof(post_count));
-    if (!in || std::memcmp(magic, "FSTP", sizeof(magic)) != 0 ||
+    if (!in || memcmp(magic, "FSTP", sizeof(magic)) != 0 ||
         version != 1 || post_count > 100000) {
-        throw std::runtime_error("Post file header is invalid");
+        throw runtime_error("Post file header is invalid");
     }
 
-    std::vector<std::unique_ptr<Post>> loaded_posts;
+    vector<unique_ptr<Post>> loaded_posts;
     loaded_posts.reserve(post_count);
-    for (std::uint32_t index = 0; index < post_count; ++index) {
+    for (uint32_t index = 0; index < post_count; ++index) {
         loaded_posts.emplace_back(PostFactory::read_from_stream(in));
     }
 
@@ -347,7 +348,7 @@ void PostManager::load(const std::string& filepath) {
     posts_.reserve(loaded_posts.size());
     delete_posts(posts_);
     delete_posts(pending_deletes_);
-    for (std::unique_ptr<Post>& post : loaded_posts) {
+    for (unique_ptr<Post>& post : loaded_posts) {
         posts_.push_back(post.release());
     }
     changed_ = false;
