@@ -2,6 +2,10 @@
 
 #include "models/PhotoPost.h"
 #include "models/TextPost.h"
+#include "models/CarouselPost.h"
+#include "models/PollPost.h"
+#include "models/NoticePost.h"
+#include "models/LostFoundPost.h"
 
 #include <cstdint>
 #include <istream>
@@ -16,10 +20,13 @@ Post* PostFactory::create(PostType type) {
     case PostType::Text:
         return new TextPost();
     case PostType::Carousel:
+        return new CarouselPost();
     case PostType::Poll:
+        return new PollPost();
     case PostType::Notice:
+        return new NoticePost();
     case PostType::LostFound:
-        throw runtime_error("This post type is not implemented yet");
+        return new LostFoundPost();
     default:
         throw invalid_argument("Invalid post type");
     }
